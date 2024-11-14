@@ -111,7 +111,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 #         'ENGINE': 'django.db.backends.sqlite3',
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
-# }
+}
 
 
 
@@ -121,8 +121,8 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://amao:ZtBC3QYh6AjomosoIhySUjhPcgyj5bwC@dpg-csqtieq3esus7384j9j0-a/pina1_db'
-    )
+      default='postgresql://amao:ZtBC3QYh6AjomosoIhySUjhPcgyj5bwC@dpg-csqtieq3esus7384j9j0-a/pina1_db'
+  )
 }
 
 
