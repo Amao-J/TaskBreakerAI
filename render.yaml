@@ -1,13 +1,13 @@
 databases:
   - name: pina
     plan: free
-    databaseName: postgres
+    databaseName: pina1_db
     user: amao
 
 services:
   - type: web
     plan: free
-    name: pina_db
+    name: pina1_db
     runtime: python
     buildCommand: "./build.sh"
     startCommand: "python -m gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker"
