@@ -1,7 +1,7 @@
 databases:
   - name: pina
     plan: free
-    databaseName: postgres
+    databaseName: pina1_db
     user: amao
 
 services:
