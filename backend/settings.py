@@ -9,12 +9,11 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-#SECRET_KEY = os.getenv('SECRET_KEY')
-SECRET_KEY = 'Sj8iAUPjSTuMb6D8AqGgjVAJcgz1KTNHtV+KkpguWGc='
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['pina1-db.onrender.com']
+ALLOWED_HOSTS = ['https://pina1-db.onrender.com/']
 
 CSRF_COOKIE_SECURE = False
 
@@ -36,7 +35,6 @@ INSTALLED_APPS = [
     'blocksite',
     
 ]
-
 
 CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000','http://localhost:3000','http://pina1-db.onrender.com']
 
@@ -107,24 +105,16 @@ AUTH_USER_MODEL = 'api.User'
 WSGI_APPLICATION = 'backend.wsgi.application'
 
 # DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-}
+#      'default': {
+#          'ENGINE': 'django.db.backends.sqlite3',
+#          'NAME': BASE_DIR / 'db.sqlite3',
+#    } }
 
 
-
-#DATABASES = {
- #   'default': dj_database_url.config(default='postgres://amao:na52blueivy@localhost/postgres')
-#}
 
 DATABASES = {
-    'default': dj_database_url.config(
-      default='postgresql://amao:ZtBC3QYh6AjomosoIhySUjhPcgyj5bwC@dpg-csqtieq3esus7384j9j0-a/pina1_db'
-  )
+     'default': dj_database_url.config(default='postgres://amao:na52blueivy@localhost/postgres')
 }
-
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -152,7 +142,6 @@ USE_TZ = True
 
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 STATIC_URL = '/static/'
 
 STATIC_ROOT=BASE_DIR / 'staticfiles'
@@ -172,7 +161,6 @@ else:
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:3000/",
         "http://127.0.0.1:3000/",
-        "http://pina1-db.onrender.com"
     ]
 
 
@@ -184,7 +172,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','pina1-db.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','possible-gar-partially.ngrok-free.app']
 
 # Login and Logout Redirect
 LOGIN_REDIRECT_URL = "/"
