@@ -14,6 +14,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = True
 
 
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','pina1-db.onrender.com']
 
 CSRF_COOKIE_SECURE = False
 
@@ -172,7 +173,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','https://pina1-db.onrender.com']
+
 
 # Login and Logout Redirect
 LOGIN_REDIRECT_URL = "/"
