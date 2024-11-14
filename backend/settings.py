@@ -9,7 +9,8 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+#SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = 'Sj8iAUPjSTuMb6D8AqGgjVAJcgz1KTNHtV+KkpguWGc='
 
 DEBUG = True
 
@@ -114,9 +115,16 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 
+#DATABASES = {
+ #   'default': dj_database_url.config(default='postgres://amao:na52blueivy@localhost/postgres')
+#}
+
 DATABASES = {
-    'default': dj_database_url.config(default='postgres://amao:na52blueivy@localhost/postgres')
+    'default': dj_database_url.config(
+        default='postgresql://amao:ZtBC3QYh6AjomosoIhySUjhPcgyj5bwC@dpg-csqtieq3esus7384j9j0-a/pina1_db'
+    )
 }
+
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
