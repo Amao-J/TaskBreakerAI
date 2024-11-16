@@ -32,7 +32,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(db_index=True, unique=True, null=True)
     first_name = models.CharField(max_length=30, null=True, blank=True)
     last_name = models.CharField(max_length=50, null=True, blank=True)
-    profile_image = models.ImageField(upload_to="uploads", blank=False, null=False, default='/staticfiles+==/images/defaultuserimage.png')
+    profile_image = models.ImageField(upload_to="uploads", blank=False, null=False, default='/staticfiles/images/defaultuserimage.png')
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     
@@ -115,7 +115,7 @@ class Subtasks(models.Model):
     tasks = models.ForeignKey(Goals, on_delete=models.CASCADE, related_name="tasks")
     description = models.CharField(max_length=250, blank=True)
     completed = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     
     

@@ -90,17 +90,20 @@ class DashboardViewSet(viewsets.ViewSet):
         blocked_sites = BlockedSite.objects.filter(user=user)
         dashboard = Dashboard.objects.get(user=request.user)
         
-        data = {
+       
+        
+        return JsonResponse({
+            "data":{
             "total_blocked_sites": blocked_sites.count(),
-            'completed_percentage': dashboard.completed_percentage(),
+            'completed_percentage': dashboard.calculate_completed_percentage(),
             "sites": BlockedSiteSerializer(blocked_sites, many=True).data,
-            "missed_or_overdue_tasks":dashboard.missed_or_overdue_tasks(),
+            
+            
+            #"missed_or_overdue_tasks":dashboard.missed_or_overdue_tasks(),
             "tasks_completed_day": dashboard.tasks_completed(period='day'),
             "tasks_completed_week": dashboard.tasks_completed(period='week'),
             "task_completion_rate": dashboard.task_completion_rate(),
-            
-        }
-        return Response(data)
+            }},status=status.HTTP_200_OK)
 
     
     
@@ -166,6 +169,8 @@ def reset_password(request, uidb64, token):
 
         return render(request, 'reset_password.html', {'valid_link': True})
     else:
-        return HttpResponse("The password reset link is invalid or has expired.")
+        return JsonResponse({
+            "message":"The password reset link is invalid or has expired."
+            })
 
 

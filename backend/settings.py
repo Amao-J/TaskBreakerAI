@@ -141,7 +141,13 @@ USE_I18N = True
 
 USE_TZ = True
 
+STATICFILES_ROOT=[os.path.join(BASE_DIR,'static'),
+                  os.path.join(BASE_DIR,'media')
+]
 
+if not DEBUG:
+    
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_URL = '/static/'
 
@@ -175,7 +181,7 @@ AUTHENTICATION_BACKENDS = (
 
 
 
-# Login and Logout Redirect
+
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
