@@ -208,24 +208,20 @@ class Dashboard(models.Model):
     
 
     def top_productivity_hours(self):
-        
-        completed_tasks = self.tasks.filter(status='completed') 
-        task_hours = [task.completed_at.hour for task in completed_tasks if task.completed_at]
+        completed_tasks = self.subtasks.filter(completed=True)
+        task_hours = [subtask.completed_at.hour for subtask in self.subtasks.filter(completed=True) if subtask.completed_at]
 
         if not task_hours:
             return {"message": "No completed tasks to analyze."}
 
-        
         hour_counts = Counter(task_hours)
         max_count = max(hour_counts.values())
 
-        
-        top_hours = [hour for hour, count in hour_counts.items() if count == max_count]
-
         return {
-            "top_hours": top_hours,
-            "task_count": max_count
+            "top_hours": [hour for hour, count in hour_counts.items() if count == max_count],
+            "task_count": max_count,
         }
+
 
 
     
@@ -249,6 +245,6 @@ def create_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_profile(sender, instance, **kwargs):
-    instance.dashboard.save()
+    instance.dashboard.save(update_fields=['updated'])
     
     

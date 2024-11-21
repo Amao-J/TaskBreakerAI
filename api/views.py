@@ -102,6 +102,7 @@ class DashboardViewSet(viewsets.ViewSet):
                 "tasks_completed_day": dashboard.tasks_completed(period='day'),
                 "tasks_completed_week": dashboard.tasks_completed(period='week'),
                 "task_completion_rate": dashboard.task_completion_rate(),
+                "top_productivity_hours":dashboard.top_productivity_hours()
             }
 
             return Response(response_data, status=status.HTTP_200_OK)
