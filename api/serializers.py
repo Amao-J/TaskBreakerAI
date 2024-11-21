@@ -36,5 +36,10 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+class PreferencesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Preferences
+        fields = ['id','roles','sound',]
+
 
 

@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db.models import Count
+from collections import Counter
 from datetime import timedelta
 
 
@@ -89,6 +89,16 @@ class Preferences(models.Model):
     class Meta:
         verbose_name = "Preference"
         verbose_name_plural = "Preferences"
+        
+    def update_preferences(self, roles=None, time_of_day=None, sound=None):
+        
+        if roles:
+            self.roles = roles
+        if time_of_day:
+            self.time_of_day = time_of_day
+        if sound:
+            self.sound = sound
+        self.save()
     
     
 class Goals(models.Model):
@@ -165,9 +175,9 @@ class Dashboard(models.Model):
         
         return self.subtasks.filter(completed=True, completed_at__gte=start_time).count()
     
-    def missed_or_overdue_tasks(self):
+    def missed_or_overdue_goals(self):
         now = timezone.now()
-        return self.subtasks.filter(completed=False, goal__due_date__lt=now).count()
+        return self.goals.filter(completed=False, due_date__lt=now)
     
     def goal_progress(self):
         completed_goals = self.goals.filter(completed=True).count()
@@ -179,6 +189,44 @@ class Dashboard(models.Model):
         total_tasks = self.subtasks.count()
         completed_tasks = self.subtasks.filter(completed=True).count()
         return (completed_tasks / total_tasks) * 100 if total_tasks > 0 else 0
+    
+    
+    def overdue_tasks_grouped_by_goals(self):
+   
+        now = timezone.now()
+        overdue_subtasks = self.subtasks.filter(completed=False, tasks__due_date__lt=now)
+
+        grouped_tasks = {}
+        for subtask in overdue_subtasks:
+            goal = subtask.tasks  
+            if goal not in grouped_tasks:
+                grouped_tasks[goal] = []
+            grouped_tasks[goal].append(subtask)
+
+        return grouped_tasks
+    
+    
+
+    def top_productivity_hours(self):
+        
+        completed_tasks = self.tasks.filter(status='completed') 
+        task_hours = [task.completed_at.hour for task in completed_tasks if task.completed_at]
+
+        if not task_hours:
+            return {"message": "No completed tasks to analyze."}
+
+        
+        hour_counts = Counter(task_hours)
+        max_count = max(hour_counts.values())
+
+        
+        top_hours = [hour for hour, count in hour_counts.items() if count == max_count]
+
+        return {
+            "top_hours": top_hours,
+            "task_count": max_count
+        }
+
 
     
     
