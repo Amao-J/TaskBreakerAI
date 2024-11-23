@@ -39,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
 class PreferencesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Preferences
-        fields = ['id','roles','sound',]
+        fields = ['id','roles','sound','time_of_day']
 
 
 

@@ -154,11 +154,7 @@ class PreferencesViewSet(viewsets.ModelViewSet):
             {"message": "Preference deleted successfully."},
             status=status.HTTP_204_NO_CONTENT
         )
-
-    
-
-    
-    
+ 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def forgot_password(request):
