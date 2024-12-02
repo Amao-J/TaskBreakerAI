@@ -59,21 +59,41 @@ class LoginView(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
 
+       
+        if not email or not password:
+            return JsonResponse({
+                "error": "Missing email or password",
+                "message": "Both email and password are required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         user = authenticate(request, email=email, password=password)
 
         if user is not None:
             login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
+            
+
+            # Log successful login
+            print(f"Login successful for user {user.email} (ID: {user.id})")
+
             return JsonResponse({
                 "message": "Login successful",
                 "user_id": user.id,
                 "access": access_token,
                 "refresh": str(refresh)
-            }, status=status.HTTP_200_OK)
-        else:
-            return JsonResponse({"error": "Invalid email or password"}, status=status.HTTP_400_BAD_REQUEST)
+            }, status=200)
 
+        
+        print(f"Login failed for email: {email}")
+        return JsonResponse({
+            "error": "Invalid email or password",
+            "message": "Wrong credentials provided.",
+            "debug": {
+                "email_provided": email,
+                "password_length": len(password) if password else 0
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
          
 
 
@@ -154,7 +174,11 @@ class PreferencesViewSet(viewsets.ModelViewSet):
             {"message": "Preference deleted successfully."},
             status=status.HTTP_204_NO_CONTENT
         )
- 
+
+    
+
+    
+    
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def forgot_password(request):

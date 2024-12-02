@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     
 ]
 
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000','http://localhost:3000','http://pina1-db.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000','http://localhost:3000','https://pina1-db.onrender.com']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -166,8 +166,11 @@ if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000/",
-        "http://127.0.0.1:3000/",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://pina1-db.onrender.com",
+        
+        
     ]
 
 

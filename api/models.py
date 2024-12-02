@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from collections import Counter
+from django.utils.timezone import now
 from datetime import timedelta
 
 
@@ -141,7 +142,8 @@ class Subtasks(models.Model):
 class Dashboard(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='dashboard') 
     goals = models.ManyToManyField(Goals, related_name='dashboards')  
-    subtasks = models.ManyToManyField(Subtasks, related_name='dashboards')  
+    subtasks = models.ManyToManyField(Subtasks, related_name='dashboards')
+    updated = models.DateTimeField(auto_now=True)  
 
     def __str__(self):
         return f"Dashboard for {self.user.email if self.user and self.user.email else 'Unknown User'}"
@@ -232,10 +234,15 @@ class BlockedSite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     url = models.URLField(max_length=200)
     duration = models.IntegerField(default=60)
-  
+    blocked_at = models.DateTimeField(auto_now_add=True)
+    
+    @property
+    def expiration(self):
+        return self.blocked_at + timedelta(minutes=self.duration)
 
     def __str__(self):
         return f"{self.url} blocked for {self.duration} minutes"   
+   
 
 
 @receiver(post_save, sender=User)
@@ -244,7 +251,7 @@ def create_profile(sender, instance, created, **kwargs):
         Dashboard.objects.create(user=instance)
 
 @receiver(post_save, sender=User)
-def save_dashboard(sender, instance, **kwargs):
-    if hasattr(instance, 'dashboard'):
-        instance.dashboard.save()
+def save_profile(sender, instance, **kwargs):
+    instance.dashboard.save(update_fields=['updated'])
+    
     
