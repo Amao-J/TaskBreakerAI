@@ -238,7 +238,7 @@ class BlockedSite(models.Model):
     
     @property
     def expiration(self):
-        return self.blocked_at + timedelta(minutes=self.duration)
+        return self.blocked_at + timedelta(minutes=int(self.duration))
 
     def __str__(self):
         return f"{self.url} blocked for {self.duration} minutes"   
