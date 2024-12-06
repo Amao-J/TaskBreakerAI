@@ -86,6 +86,10 @@ class Preferences(models.Model):
         ('Background music','Background music')
         ))
     
+    task_management = models.CharField(max_length=40, choices=(
+        ('Single Task', 'Single Task'), ('Multi-tasking','Multi-tasking')
+    ),default='Single Task')
+    
     
     class Meta:
         verbose_name = "Preference"

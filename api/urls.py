@@ -8,7 +8,7 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'dashboard', DashboardViewSet, basename='dashboard')
-router.register(r'preferences', PreferencesViewSet, basename='preferences')
+router.register(r'onboarding', PreferencesViewSet, basename='onboarding')
 
 
 
