@@ -117,17 +117,36 @@ class Goals(models.Model):
     class Meta:
         verbose_name = "Goal"
         verbose_name_plural = "Goals"
+        
     
-    
-
+    def check_and_mark_complete(self):
+        if not self.tasks.filter(completed=False).exists():
+            self.completed = True
+            self.save()
     
      
     
     def __str__(self):
         return self.description
     
+    
+    def check_completion_status(self):
+        
+        if self.tasks.filter(completed=False).exists():
+            self.completed = False
+        else:
+            self.completed = True
+        self.save()
+
+    def mark_all_subtasks_completed(self):
+        
+        self.tasks.update(completed=True, completed_at=timezone.now())
+        self.completed = True
+        self.save()
+
+    
 class Subtasks(models.Model):
-    tasks = models.ForeignKey(Goals, on_delete=models.CASCADE, related_name="tasks")
+    goal = models.ForeignKey(Goals, on_delete=models.CASCADE, related_name="tasks")
     description = models.CharField(max_length=250, blank=True)
     completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=True)
@@ -140,6 +159,15 @@ class Subtasks(models.Model):
 
     def __str__(self):
         return f"Subtask: {self.description} for Goal: {self.tasks.description}"
+    
+    def save(self, *args, **kwargs):
+       
+        if self.completed and not self.completed_at:
+            self.completed_at = timezone.now()
+        elif not self.completed:
+            self.completed_at = None
+        super().save(*args, **kwargs)
+        self.goal.check_completion_status()
   
     
     
@@ -239,6 +267,11 @@ class BlockedSite(models.Model):
     url = models.URLField(max_length=200)
     duration = models.IntegerField(default=60)
     blocked_at = models.DateTimeField(auto_now_add=True)
+    
+    
+    
+    class Meta:
+        unique_together = ('user', 'url')
     
     @property
     def expiration(self):

@@ -97,6 +97,10 @@ class LoginView(APIView):
          
 
 
+def google_sign(request):
+    return render(request, 'auth_test.html')
+
+
 def logout_view(request):
     logout(request)
     return redirect("/")

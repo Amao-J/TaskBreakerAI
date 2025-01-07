@@ -3,8 +3,6 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 
-import dj_database_url
-
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,7 +12,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','pina1-db.onrender.com']
+ALLOWED_HOSTS = ['*']
 
 CSRF_COOKIE_SECURE = False
 
@@ -34,10 +32,12 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'blocksite',
+    'django_celery_beat',
+    'django_cron',
     
 ]
 
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000','http://localhost:3000','https://pina1-db.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000','http://localhost:3000','https://67.227.186.52','http://67.227.186.52']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -48,6 +48,10 @@ REST_FRAMEWORK = {
     ],
 }
 
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
@@ -105,18 +109,29 @@ AUTH_USER_MODEL = 'api.User'
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-# DATABASES = {
-#      'default': {
-#          'ENGINE': 'django.db.backends.sqlite3',
-#          'NAME': BASE_DIR / 'db.sqlite3',
-#    } }
 
 
 
 DATABASES = {
-     'default': dj_database_url.config(default='postgres://amao:na52blueivy@localhost/postgres')
+
+	'default':{
+		'ENGINE':'django.db.backends.postgresql',
+		'NAME':'pina_db',
+		'USER':'amao',
+		'PASSWORD':'nanobot12@A',
+		'PORT':'5432',
+	}
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -148,6 +163,7 @@ STATICFILES_ROOT=[os.path.join(BASE_DIR,'static'),
 if not DEBUG:
     
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_URL = '/static/'
 
@@ -168,7 +184,7 @@ else:
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://pina1-db.onrender.com",
+        "chrome-extension://aiglmcifklgingcipenhoepngohdiaod",
         
         
     ]

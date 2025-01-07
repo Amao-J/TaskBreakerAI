@@ -26,16 +26,21 @@ class UserAdmin(BaseUserAdmin):
 class PreferencesAdmin(admin.ModelAdmin):
     list_display = ('user', 'roles', 'time_of_day', 'sound')
     search_fields = ('user__email', 'roles')
-
+    
+class SubtasksInline(admin.TabularInline):
+    model = Subtasks
+    extra = 1   
+    
+    
 
 class GoalsAdmin(admin.ModelAdmin):
     list_display = ('user', 'description', 'completed', 'due_date')
     search_fields = ('user__email', 'description')
     list_filter = ('completed', 'due_date')
-
+    inlines = [SubtasksInline]
 
 class SubtasksAdmin(admin.ModelAdmin):
-    list_display = ('tasks', 'description', 'completed')
+    list_display = ('goal', 'description', 'completed')
     search_fields = ('tasks__description', 'description')
     list_filter = ('completed',)
 
@@ -58,10 +63,7 @@ class DashboardAdmin(admin.ModelAdmin):
     get_total_goals.short_description = 'Total Goals'
     get_total_subtasks.short_description = 'Total Subtasks'
     get_completed_percentage.short_description = 'Completed Percentage'
-    
-    
-    
-    
+
 from .models import BlockedSite
 
 @admin.register(BlockedSite)
