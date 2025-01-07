@@ -79,7 +79,7 @@ class Preferences(models.Model):
         ('Morning', 'Morning'),
         ('Afternoon', 'Afternoon'),
         ('Evening', 'Evening')
-    ), default="")
+    ), default="Morning")
     
     sound = models.CharField(max_length=40, choices=(
         ('Quiet','Queit'),
@@ -87,7 +87,8 @@ class Preferences(models.Model):
         ))
     
     task_management = models.CharField(max_length=40, choices=(
-        ('Single Task', 'Single Task'), ('Multi-tasking','Multi-tasking')
+        ('Single Task', 'Single Task'), 
+        ('Multi-tasking','Multi-tasking')
     ),default='Single Task')
     
     
