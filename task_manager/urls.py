@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import create_goal_and_generate_subtasks
+from .views import create_goal_and_generate_subtasks,calendar_view
 
 
 urlpatterns=[
      path('generate-subtasks/', create_goal_and_generate_subtasks, name='generate_subtasks'),
+     path('calendar/', calendar_view, name='calendar_view'),
 ]

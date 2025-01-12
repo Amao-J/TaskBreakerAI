@@ -113,9 +113,11 @@ class DashboardViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def overview(self, request):
         user = request.user
+        
         try:
             dashboard = Dashboard.objects.get(user=user)
             blocked_sites = BlockedSite.objects.filter(user=user)
+            total_subtasks = dashboard.subtasks.count()
 
             response_data = {
                 "total_blocked_sites": blocked_sites.count(),
@@ -126,21 +128,24 @@ class DashboardViewSet(viewsets.ViewSet):
                 "tasks_completed_day": dashboard.tasks_completed(period='day'),
                 "tasks_completed_week": dashboard.tasks_completed(period='week'),
                 "task_completion_rate": dashboard.task_completion_rate(),
-                "top_productivity_hours":dashboard.top_productivity_hours()
+                "top_productivity_hours":dashboard.top_productivity_hours(),
+                "total_subtasks":total_subtasks
             }
 
             return Response(response_data, status=status.HTTP_200_OK)
         except Dashboard.DoesNotExist:
             return Response({"error": "Dashboard not found."}, status=status.HTTP_404_NOT_FOUND)
-
+        
+        
+    
     def format_overdue_tasks(self, dashboard):
-        return {
-            goal.description: [
-                {"task": subtask.description, "due_date": goal.due_date.isoformat()}
-                for subtask in subtasks
+        overdue_tasks = {}
+        for goal in dashboard.missed_or_overdue_goals():
+            overdue_tasks[goal.description] = [
+                {"task": subtask.description, "due_date": subtask.end_time.isoformat()}
+                for subtask in goal.subtasks_set.filter(end_time__lt=now(), completed=False)
             ]
-            for goal, subtasks in dashboard.overdue_tasks_grouped_by_goals().items()
-        }
+        return overdue_tasks
 
 class PreferencesViewSet(viewsets.ModelViewSet):
     queryset = Preferences.objects.all()

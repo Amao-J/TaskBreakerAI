@@ -34,10 +34,13 @@ INSTALLED_APPS = [
     'blocksite',
     'django_celery_beat',
     'django_cron',
+    'django_redis'
     
 ]
 
 CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000','http://localhost:3000','https://67.227.186.52','http://67.227.186.52']
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
