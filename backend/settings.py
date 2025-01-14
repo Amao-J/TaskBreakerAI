@@ -62,7 +62,7 @@ SOCIALACCOUNT_PROVIDERS = {
             "profile",
             "email"
         ],
-        "AUTH_PARAMS": {"access_type": "offline"},
+        "AUTH_PARAMS": {"access_type": "online"},
     }
 }
 
@@ -202,12 +202,11 @@ AUTHENTICATION_BACKENDS = (
 )
 
 
-
-
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-# django-allauth settings
+
+
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True

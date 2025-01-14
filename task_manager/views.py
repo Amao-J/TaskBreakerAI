@@ -27,7 +27,7 @@ def create_goal_and_generate_subtasks(request):
                     "content": (
                         "You will generate a list of subtasks for the user based on the entered task. "
                         "The subtasks should be steps that can be followed to successfully complete the task. "
-                        "The subtasks should not be more than 7. And let there be no ** in the generated output."
+                        
                     ),
                 },
                 {
@@ -69,6 +69,28 @@ def create_goal_and_generate_subtasks(request):
 
     return Response(response_data, status=status.HTTP_201_CREATED)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_subtask(request):
+    serializer = SubtaskSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def edit_subtask(request, subtask_id):
+    try:
+        subtask = Subtasks.objects.get(id=subtask_id, goal__user=request.user)
+    except Subtasks.DoesNotExist:
+        return Response({'error': 'Subtask not found or you do not have permission to edit it.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = SubtaskSerializer(subtask, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 def calendar_view(request):
     goals = Goals.objects.filter(user=request.user)

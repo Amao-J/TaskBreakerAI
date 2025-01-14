@@ -1,9 +1,13 @@
 from rest_framework import serializers
 from api.models import Subtasks,Goals
-class SubtasksSerializer(serializers.ModelSerializer):
+from rest_framework import serializers
+from .models import Subtasks
+
+class SubtaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subtasks
-        fields = ['id', 'description', 'timeframe', 'completed', 'generated_by_ai']
+        fields = ['id', 'goal', 'description', 'completed', 'end_time', 'created_at', 'completed_at']
+        read_only_fields = ['id', 'created_at', 'completed_at']
 
 
 class GoalsSerializer(serializers.ModelSerializer):
