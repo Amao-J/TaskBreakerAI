@@ -105,7 +105,7 @@ TEMPLATES = [
     },
 ]
 
-SITE_ID =4
+SITE_ID =5
 
 
 AUTH_USER_MODEL = 'api.User'
@@ -140,8 +140,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'yomijonathan8@gmail.com'
-EMAIL_HOST_PASSWORD = 'zfvjowapphevcrbt'
+EMAIL_HOST_USER = 'usepina25@gmail.com'
+EMAIL_HOST_PASSWORD = 'whunlwxhahukeroq'
 
 
 AUTH_PASSWORD_VALIDATORS = [

@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http import JsonResponse
 import groq
+from .serializers import SubtasksSerializer
 
 client = groq.Client(api_key="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")
 
@@ -42,7 +43,7 @@ def create_goal_and_generate_subtasks(request):
     except Exception as e:
         return Response({"error": "Failed to generate subtasks.", "details": str(e)}, status=500)
 
-    # Save subtasks to the database
+   
     if not subtasks:
         return Response({"error": "No subtasks were generated."}, status=400)
 
@@ -62,7 +63,7 @@ def create_goal_and_generate_subtasks(request):
             "description": goal.description,
         },
         "subtasks": [
-            {"id": subtask.id, "description": subtask.description}
+            { "description": subtask.description}
             for subtask in subtask_objects
         ],
     }
@@ -72,7 +73,7 @@ def create_goal_and_generate_subtasks(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_subtask(request):
-    serializer = SubtaskSerializer(data=request.data)
+    serializer = SubtasksSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -86,11 +87,29 @@ def edit_subtask(request, subtask_id):
     except Subtasks.DoesNotExist:
         return Response({'error': 'Subtask not found or you do not have permission to edit it.'}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = SubtaskSerializer(subtask, data=request.data, partial=True)
+    serializer = SubtasksSerializer(subtask, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_goals(request):
+    goals = Goals.objects.filter(user=request.user)
+    response_data = []
+
+    for goal in goals:
+        subtasks = Subtasks.objects.filter(goal=goal)
+        subtask_list = [{"id": subtask.id, "description": subtask.description} for subtask in subtasks]
+        response_data.append({
+            "goal_id": goal.id,
+            "description": goal.description,
+            "subtasks":subtask_list
+        })
+
+    return Response({"data": response_data})
 
 def calendar_view(request):
     goals = Goals.objects.filter(user=request.user)

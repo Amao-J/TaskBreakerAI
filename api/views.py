@@ -8,7 +8,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status, generics
 from .models import User,BlockedSite,Dashboard,Preferences
-from .serializers import UserSerializer,PreferencesSerializer
+from .serializers import UserSerializer,PreferencesSerializer,GoalSerializer, SubtaskSerializer
 from blocksite.serializers import BlockedSiteSerializer
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import render, redirect
@@ -113,26 +113,36 @@ class DashboardViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def overview(self, request):
         user = request.user
-        
+       
         try:
             dashboard = Dashboard.objects.get(user=user)
+            if not dashboard:
+                return Response({"error": "Dashboard not found."}, status=status.HTTP_404_NOT_FOUND)
+             
             blocked_sites = BlockedSite.objects.filter(user=user)
-            total_subtasks = dashboard.subtasks.count()
+
+            
+            goals = GoalSerializer(dashboard.goals.all(), many=True).data
+            subtasks = SubtaskSerializer(dashboard.subtasks.all(), many=True).data
+           
 
             response_data = {
                 "total_blocked_sites": blocked_sites.count(),
                 "completed_percentage": dashboard.calculate_completed_percentage(),
                 "sites": BlockedSiteSerializer(blocked_sites, many=True).data,
-                "missed_or_overdue_goals": list(dashboard.missed_or_overdue_goals()),
+                "missed_or_overdue_goals": goals,  
                 "overdue_tasks_by_goals": self.format_overdue_tasks(dashboard),
                 "tasks_completed_day": dashboard.tasks_completed(period='day'),
                 "tasks_completed_week": dashboard.tasks_completed(period='week'),
                 "task_completion_rate": dashboard.task_completion_rate(),
                 "top_productivity_hours":dashboard.top_productivity_hours(),
-                "total_subtasks":total_subtasks
+                "total_subtasks":dashboard.subtasks.count(),
+                "goals": goals,
+                "subtasks": subtasks,
+            
             }
 
-            return Response(response_data, status=status.HTTP_200_OK)
+            return Response({"data": response_data}, status=status.HTTP_200_OK)
         except Dashboard.DoesNotExist:
             return Response({"error": "Dashboard not found."}, status=status.HTTP_404_NOT_FOUND)
         
@@ -143,7 +153,7 @@ class DashboardViewSet(viewsets.ViewSet):
         for goal in dashboard.missed_or_overdue_goals():
             overdue_tasks[goal.description] = [
                 {"task": subtask.description, "due_date": subtask.end_time.isoformat()}
-                for subtask in goal.subtasks_set.filter(end_time__lt=now(), completed=False)
+                for subtask in goal.tasks.filter(end_time__lt=timezone.now(), completed=False)
             ]
         return overdue_tasks
 

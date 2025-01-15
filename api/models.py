@@ -97,12 +97,20 @@ class Goals(models.Model):
         return self.description
 
 class Subtasks(models.Model):
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+                       
     goal = models.ForeignKey(Goals, on_delete=models.CASCADE, related_name="tasks")
     description = models.CharField(max_length=250, blank=True)
     completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=True)
     end_time = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
 
     def save(self, *args, **kwargs):
         if self.completed and not self.completed_at:
@@ -121,6 +129,21 @@ class Dashboard(models.Model):
     goals = models.ManyToManyField(Goals, related_name='dashboards')
     subtasks = models.ManyToManyField(Subtasks, related_name='dashboards')
     updated = models.DateTimeField(auto_now=True)
+    
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        
+        user_goals = Goals.objects.filter(user=self.user)
+        user_subtasks = Subtasks.objects.filter(goal__in=user_goals)
+
+       
+        self.goals.set(user_goals)
+        self.subtasks.set(user_subtasks)
+
+       
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Dashboard for {self.user.email if self.user and self.user.email else 'Unknown User'}"
