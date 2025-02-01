@@ -1,12 +1,17 @@
 from rest_framework import serializers
-from .models import User, Preferences, Goals, Subtasks, Dashboard
+from .models import User, Preferences, Goals, Subtasks,Team,Invitation
+
+class InvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invitation
+        fields = '__all__'
 
 
 
 class SubtaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subtasks
-        fields = ['id', 'description', 'completed', 'created_at', 'end_time', 'completed_at','priority',]
+        fields = ['id', 'description', 'completed', 'created_at', 'end_time', 'completed_at', 'priority']
 
 class GoalSerializer(serializers.ModelSerializer):
     subtasks = SubtaskSerializer(many=True, read_only=True)
@@ -14,6 +19,8 @@ class GoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Goals
         fields = ['id', 'description', 'completed', 'created_at', 'due_date', 'subtasks']
+
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,6 +61,13 @@ class PreferencesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Preferences
         fields = ['id','roles','sound','time_of_day','task_management']
+        
+        
+        
+        
+class TeamSerializer(serializers.ModelSerializer):
+    creator = serializers.ReadOnlyField(source='creator.id')
 
-
-
+    class Meta:
+        model = Team
+        fields = ['id', 'name', 'size', 'workspace_details', 'creator', 'members', 'created_at']

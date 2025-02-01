@@ -1,31 +1,31 @@
-from django.shortcuts import render, redirect,HttpResponse
+from django.shortcuts import redirect,get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import JsonResponse
-from rest_framework.decorators import api_view,permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view,permission_classes,action
 from django.contrib.auth import login, logout
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status, generics
-from .models import User,BlockedSite,Dashboard,Preferences
-from .serializers import UserSerializer,PreferencesSerializer,GoalSerializer, SubtaskSerializer
+from .models import User,BlockedSite,Dashboard,Preferences,Team,Invitation
+from .serializers import UserSerializer,PreferencesSerializer,GoalSerializer, SubtaskSerializer,InvitationSerializer,TeamSerializer
 from blocksite.serializers import BlockedSiteSerializer
 from django.utils.http import urlsafe_base64_decode
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny,BasePermission,IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status,permissions,viewsets
+from rest_framework import status,permissions,viewsets,generics
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
+import django.utils.timezone as timezone
+from rest_framework.throttling import AnonRateThrottle
+from django.conf import settings
+import logging
 
 
-
+logger = logging.getLogger(__name__)
 
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -54,51 +54,40 @@ class CreateUserView(generics.CreateAPIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
 
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
 
-       
         if not email or not password:
-            return JsonResponse({
+            return Response({
                 "error": "Missing email or password",
                 "message": "Both email and password are required."
             }, status=status.HTTP_400_BAD_REQUEST)
 
         user = authenticate(request, email=email, password=password)
 
-        if user is not None:
-            login(request, user)
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            
+        if user is None:
+            logger.warning(f"Login failed for email: {email}")
+            return Response({
+                "error": "Invalid email or password",
+                "message": "Wrong credentials provided."
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Log successful login
-            print(f"Login successful for user {user.email} (ID: {user.id})")
+        login(request, user)
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
 
-            return JsonResponse({
-                "message": "Login successful",
-                "user_id": user.id,
-                "access": access_token,
-                "refresh": str(refresh)
-            }, status=200)
-
-        
-        print(f"Login failed for email: {email}")
-        return JsonResponse({
-            "error": "Invalid email or password",
-            "message": "Wrong credentials provided.",
-            "debug": {
-                "email_provided": email,
-                "password_length": len(password) if password else 0
-            }
-        }, status=status.HTTP_400_BAD_REQUEST)
+        logger.info(f"Login successful for user {user.email} (ID: {user.id})")
+        return Response({
+            "message": "Login successful",
+            "user_id": user.id,
+            "access": access_token,
+            "refresh": str(refresh)
+        }, status=status.HTTP_200_OK)
          
 
-
-def google_sign(request):
-    return render(request, 'auth_test.html')
 
 
 def logout_view(request):
@@ -127,6 +116,7 @@ class DashboardViewSet(viewsets.ViewSet):
            
 
             response_data = {
+                "user":user.first_name,
                 "total_blocked_sites": blocked_sites.count(),
                 "completed_percentage": dashboard.calculate_completed_percentage(),
                 "sites": BlockedSiteSerializer(blocked_sites, many=True).data,
@@ -156,6 +146,7 @@ class DashboardViewSet(viewsets.ViewSet):
                 for subtask in goal.tasks.filter(end_time__lt=timezone.now(), completed=False)
             ]
         return overdue_tasks
+
 
 class PreferencesViewSet(viewsets.ModelViewSet):
     queryset = Preferences.objects.all()
@@ -187,7 +178,7 @@ class PreferencesViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Perform the deletion
+        
         self.perform_destroy(instance)
         return Response(
             {"message": "Preference deleted successfully."},
@@ -243,3 +234,64 @@ def reset_password(request, uidb64, token):
 
 
 
+class TeamViewSet(viewsets.ModelViewSet):
+    serializer_class = TeamSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Team.objects.filter(members=self.request.user) | Team.objects.filter(creator=self.request.user)
+
+    def perform_create(self, serializer):
+        team = serializer.save(creator=self.request.user)
+        team.members.add(self.request.user)
+
+    def perform_destroy(self, instance):
+        if instance.creator != self.request.user:
+            return Response({"message":"Only the team creator can delete the team."})
+        instance.delete()
+        
+
+
+class IsTeamCreator(BasePermission):
+    def has_permission(self, request, view):
+        team_id = request.data.get("team_id")
+        return request.user.teams.filter(id=team_id, creator=request.user).exists()
+
+class InviteMemberView(viewsets.ViewSet):
+    
+    permission_classes = [IsAuthenticated, IsTeamCreator]
+    
+    def create(self, request):
+        email = request.data.get('email')
+        team_id = request.data.get('team_id')
+        role = request.data.get('role')
+
+       
+        invitation = Invitation.objects.create(email=email, team_id=team_id, role=role)
+
+        invite_link = f"{settings.FRONTEND_URL}/accept-invite/{invitation.token}"
+        send_mail(
+            "You're invited to a team!",
+            f"Click here to accept the invite: {invite_link}",
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+
+        return Response({"message": "Invitation sent successfully"}, status=status.HTTP_201_CREATED)
+    
+    
+
+
+
+class AcceptInvitationView(APIView):
+    def post(self, request, token):
+        invitation = get_object_or_404(Invitation, token=token, accepted=False)
+        user = request.user  
+
+        
+        invitation.team.members.add(user)
+        invitation.accepted = True
+        invitation.save()
+
+        return Response({"message": "Invitation accepted"}, status=status.HTTP_200_OK)

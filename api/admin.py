@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import User, Preferences, Goals, Subtasks, Dashboard
+from .models import User, Preferences, Goals, Subtasks, Dashboard, Team
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import Group 
 
 
 class UserAdmin(BaseUserAdmin):
@@ -41,7 +42,7 @@ class GoalsAdmin(admin.ModelAdmin):
 
 class SubtasksAdmin(admin.ModelAdmin):
     list_display = ('goal', 'description', 'completed')
-    search_fields = ('tasks__description', 'description')
+    search_fields = ('goal__description', 'description')
     list_filter = ('completed',)
 
 
@@ -53,7 +54,7 @@ class DashboardAdmin(admin.ModelAdmin):
         return obj.goals.count()
 
     def get_total_subtasks(self, obj):
-        return obj.subtasks.count()
+        return obj.goal.count()
 
     def get_completed_percentage(self, obj):
         return obj.calculate_completed_percentage()
@@ -70,6 +71,12 @@ from .models import BlockedSite
 class BlockedSiteAdmin(admin.ModelAdmin):
     list_display = ('user', 'url')
     search_fields = ('user__username', 'url')
+    
+    
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ('name', 'creator', 'size', 'created_at')
+    search_fields = ('name', 'creator__username')
 
 
 admin.site.register(User, UserAdmin)

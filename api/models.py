@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from collections import Counter
 from datetime import timedelta
+import uuid
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **kwargs):
@@ -29,10 +30,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(db_index=True, unique=True, null=True)
     first_name = models.CharField(max_length=30, null=True, blank=True)
     last_name = models.CharField(max_length=50, null=True, blank=True)
-    profile_image = models.ImageField(upload_to="uploads", blank=False, null=False, default='/staticfiles/images/defaultuserimage.png')
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-
+    subscription_status = models.CharField(
+        max_length=20,
+        choices=[('Basic', 'Basic'), ('Premium', 'Premium')],
+        default='Basic'
+    )    
     groups = models.ManyToManyField('auth.Group', related_name='custom_user_set', blank=True)
     user_permissions = models.ManyToManyField('auth.Permission', related_name='custom_user_permissions_set', blank=True)
 
@@ -93,8 +97,14 @@ class Goals(models.Model):
         verbose_name = "Goal"
         verbose_name_plural = "Goals"
 
+
     def __str__(self):
         return self.description
+
+from django.db import models
+from django.utils import timezone
+from django.core.exceptions import ValidationError
+from datetime import timedelta
 
 class Subtasks(models.Model):
     PRIORITY_CHOICES = [
@@ -108,31 +118,60 @@ class Subtasks(models.Model):
     description = models.CharField(max_length=250, blank=True)
     completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=True)
+    start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
 
     def save(self, *args, **kwargs):
+        # Validate end_time
+        if self.start_time and self.end_time and self.end_time <= self.start_time:
+            raise ValidationError("End time must be after start time.")
+
+        # Set completed_at if the task is marked as completed
         if self.completed and not self.completed_at:
             self.completed_at = timezone.now()
+
         super().save(*args, **kwargs)
+
+    def duration(self):
+        if self.start_time and self.end_time:
+            return (self.end_time - self.start_time).total_seconds() / 60  # Duration in minutes
+        return None
+
+    def is_overdue(self):
+        if self.end_time and not self.completed:
+            return timezone.now() > self.end_time
+        return False
+
+    def update_priority(self):
+        if self.end_time:
+            time_remaining = (self.end_time - timezone.now()).total_seconds() / 3600  # Hours remaining
+            if time_remaining < 24:
+                self.priority = 'critical'
+            elif time_remaining < 72:
+                self.priority = 'high'
+            elif time_remaining < 168:
+                self.priority = 'medium'
+            else:
+                self.priority = 'low'
+            self.save()
+
+    def __str__(self):
+        return f"Subtask: {self.description} (Priority: {self.priority}, Completed: {self.completed})"
 
     class Meta:
         verbose_name = "Subtask"
         verbose_name_plural = "Subtasks"
-
-    def __str__(self):
-        return f"Subtask: {self.description} for Goal: {self.goal.description}"
 
 class Dashboard(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='dashboard')
     goals = models.ManyToManyField(Goals, related_name='dashboards')
     subtasks = models.ManyToManyField(Subtasks, related_name='dashboards')
     updated = models.DateTimeField(auto_now=True)
-    
-    
+
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        super().save(*args, **kwargs)  # Save the instance first
 
         
         user_goals = Goals.objects.filter(user=self.user)
@@ -143,7 +182,7 @@ class Dashboard(models.Model):
         self.subtasks.set(user_subtasks)
 
        
-        super().save(*args, **kwargs)
+
 
     def __str__(self):
         return f"Dashboard for {self.user.email if self.user and self.user.email else 'Unknown User'}"
@@ -211,6 +250,17 @@ class Dashboard(models.Model):
             "top_hours": [hour for hour, count in hour_counts.items() if count == max_count],
             "task_count": max_count,
         }
+        
+        
+        
+class Invitation(models.Model):
+    email = models.EmailField()
+    team = models.ForeignKey('Team', on_delete=models.CASCADE)
+    role = models.CharField(max_length=50)
+    token = models.UUIDField(default=uuid.uuid4, unique=True)
+    accepted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+        
 
 class CalendarEvent(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='events')
@@ -238,9 +288,23 @@ class BlockedSite(models.Model):
 
     def __str__(self):
         return f"{self.url} blocked for {self.duration} minutes"
+    
+    
+class Team(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    size = models.PositiveIntegerField(default=1)
+    workspace_details = models.TextField(blank=True, null=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_teams')
+    members = models.ManyToManyField(User, related_name='teams', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
 
 @receiver(post_save, sender=User)
 def create_or_update_dashboard(sender, instance, created, **kwargs):
     if created:
         Dashboard.objects.create(user=instance)
     instance.dashboard.save(update_fields=['updated'])
+    
+    
