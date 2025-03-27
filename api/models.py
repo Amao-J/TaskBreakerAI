@@ -101,11 +101,6 @@ class Goals(models.Model):
     def __str__(self):
         return self.description
 
-from django.db import models
-from django.utils import timezone
-from django.core.exceptions import ValidationError
-from datetime import timedelta
-
 class Subtasks(models.Model):
     PRIORITY_CHOICES = [
         ('low', 'Low'),
